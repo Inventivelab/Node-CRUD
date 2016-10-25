@@ -2,7 +2,13 @@ const Listing = require('../models/listing');
 
 module.exports = {
   showListings: showListings,
-  showSingleListing: showSingleListing
+  showSingleListing: showSingleListing,
+  seedListings: seedListings,
+  showCreate: showCreate,
+  processCreate: processCreate,
+  showEdit: showEdit,
+  processEdit: processEdit,
+  deleteListing: deleteListing
 }
 
 // show all listings
@@ -61,4 +67,105 @@ function seedListings(req, res){
 
   // seeded!
   res.send('Database seeded!');
+}
+
+/**
+ * Show the create form
+ */
+function showCreate(req, res) {
+  res.render('pages/create', {
+    errors: req.flash('errors')
+  });
+}
+
+/**
+ * Process the creation form
+ */
+function processCreate(req, res) {
+  // validate information
+  req.checkBody('name', 'Name is required.').notEmpty();
+  req.checkBody('description', 'Description is required.').notEmpty();
+
+  // if there are errors, redirect and save errors to flash
+  const errors = req.validationErrors();
+  if (errors) {
+    req.flash('errors', errors.map(err => err.msg));
+    return res.redirect('/listings/create');
+  }
+
+  // create a new listing
+  const listing = new Listing({
+    name: req.body.name,
+    description: req.body.description
+  });
+
+  // save listing
+  listing.save((err) => {
+    if (err)
+      throw err;
+
+    // set a successful flash message
+    req.flash('success', 'Successfuly created listing!');
+
+    // redirect to the newly created listing
+    res.redirect(`/listings/${listing.slug}`);
+  });
+}
+
+/**
+ * Show the edit form
+ */
+function showEdit(req, res) {
+  Listing.findOne({ slug: req.params.slug }, (err, listing) => {
+    res.render('pages/edit', {
+      listing: listing,
+      errors: req.flash('errors')
+    });
+  });
+}
+
+/**
+ * Process the edit form
+ */
+function processEdit(req, res) {
+  // validate information
+  req.checkBody('name', 'Name is required.').notEmpty();
+  req.checkBody('description', 'Description is required.').notEmpty();
+
+  // if there are errors, redirect and save errors to flash
+  const errors = req.validationErrors();
+  if (errors) {
+    req.flash('errors', errors.map(err => err.msg));
+    return res.redirect(`/listings/${req.params.slug}/edit`);
+  }
+
+  // finding a current listing
+  Listing.findOne({ slug: req.params.slug }, (err, listing) => {
+    // updating that listing
+    listing.name        = req.body.name;
+    listing.description = req.body.description;
+
+    listing.save((err) => {
+      if (err)
+        throw err;
+
+      // success flash message
+      // redirect back to the /listings
+      req.flash('success', 'Successfully updated listing.');
+      res.redirect('/listings');
+    });
+  });
+
+}
+
+/**
+ * Delete an listing
+ */
+function deleteListing(req, res) {
+  Listing.remove({ slug: req.params.slug }, (err) => {
+    // set flash data
+    // redirect back to the listings page
+    req.flash('success', 'Listing deleted!');
+    res.redirect('/listings');
+  });
 }
