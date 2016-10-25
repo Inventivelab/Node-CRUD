@@ -3,7 +3,7 @@ const Listing = require('../models/listing');
 module.exports = {
   showListings: showListings,
   showSingleListing: showSingleListing,
-  seedListings: seedListings,
+  seedListings: seedListings
   showCreate: showCreate,
   processCreate: processCreate,
   showEdit: showEdit,
